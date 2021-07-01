@@ -1,0 +1,5 @@
+# exclude everything
+/venv/*
+/__pycache__/*
+*.py[co]
+/.idea/*
