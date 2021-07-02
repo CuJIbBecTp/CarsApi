@@ -12,10 +12,14 @@ for i in range(len(data)):
     print(response.json())
 
 input()
-response = requests.delete(BASE + "cars/0")
-print(response)
-input()
 response = requests.get(BASE + "cars/2")
 print(response.json())
-#response = requests.post(BASE + "helloworld")
-#print(response.json())
+
+input()
+response = requests.patch(BASE + "cars/2", {"rate": 4.55})
+print(response.json())
+
+input()
+for i in range(len(data)):
+    response = requests.delete(BASE + "cars/" + str(i))
+print(response.json())
