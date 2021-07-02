@@ -3,3 +3,4 @@
 /__pycache__/*
 *.py[co]
 /.idea/*
+database.db
