@@ -1,0 +1,22 @@
+version: '3'
+services:
+
+  cars_api:
+    # Build the Dockerfile in this directory.
+    build: .
+    stdin_open: true
+    tty: true
+    # Make all commands relative to our application directory
+    working_dir: /CarsApi
+
+    # Set some environment variables to be used in the application
+    environment:
+      FLASK_APP: app.py
+
+    # The process that runs in the container.
+    command: python app.py
+
+    # Make the port available on the host machine
+    # so that we can navigate there with our web browser.
+    ports:
+      - '5000:5000'
