@@ -119,7 +119,6 @@ class PopularCars(Resource):
             .group_by(CarModel.make, CarModel.model)\
             .order_by(func.count(CarModel.rate).desc())
         result = db.session.execute(query).fetchall()
-        print(result)
         res_list = []
         for i in result:
             res_list.append({'id': i[0], 'make': i[1], 'model': i[2], 'rates_number': i[3]})
@@ -129,4 +128,4 @@ class PopularCars(Resource):
 
 
 if __name__ == "__main__":
-    app.run(debug=True)
+    app.run(host='0.0.0.0', threaded=True, debug=False, port=5000)

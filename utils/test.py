@@ -20,19 +20,16 @@ for i in data:
 
 
 # test of rate update
-#input()
 print('Test of the rating update')
 response = requests.post(BASE + "rate/", {"car_id": 6, "rating": 3.5})
 print(response.json())
 response = requests.post(BASE + "rate", {"car_id": 7, "rating": 4.5})
 print(response.json())
 
-#input()
 print('All the unique models of the database:')
 response = requests.get(BASE + "cars/")
 print(response.json())
 
-#input()
 print('Popularity of the cars:')
 response = requests.get(BASE + "popular/")
 print(response.json())
