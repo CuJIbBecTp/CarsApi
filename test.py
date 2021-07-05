@@ -3,40 +3,40 @@ import requests
 BASE = "http://127.0.0.1:5000/"
 
 data = [{"make": "volkswagen", "model": "passat", "rate": 3},
-        {"make": "BMW", "model": "s5", "rate": 4},
-        {"make": "mercedes", "model": "E220", "rate": 1},
-        {"make": "renault", "model": "scenic"}]
+        {"make": "BMW", "model": "X6", "rate": 3},
+        {"make": "BMW", "model": "X6", "rate": 4},
+        {"make": "mercedes-benz", "model": "ML-Class", "rate": 1},
+        {"make": "mercedes-benz", "model": "ML-Class", "rate": 2},
+        {"make": "mercedes-benz", "model": "ML-Class", "rate": 3},
+        {"make": "audi", "model": "A6", "rate": 1},
+        {"make": "audi", "model": "A6", "rate": 2},
+        {"make": "audi", "model": "A6", "rate": 3},
+        {"make": "audi", "model": "A6", "rate": 4}]
 
-print('Add 4 rows to the DB')
-for i in range(len(data)):
-    response = requests.put(BASE + "cars/" + str(i), data[i])
+for i in data:
+    print('Add 1 row using POST and models check')
+    response = requests.post(BASE + "cars/", i)
     print(response.json())
 
-print('Add 1 row using POST and models check')
-response = requests.post(BASE + "cars/", {"make": "Volkswagen", "model": "Golf"})
-print(response.json())
-
-input()
-response = requests.get(BASE + "cars/2")
-print(response.json())
 
 # test of rate update
-input()
+#input()
 print('Test of the rating update')
-response = requests.post(BASE + "rate/", {"car_id": 1, "rating": 5})
+response = requests.post(BASE + "rate/", {"car_id": 6, "rating": 3.5})
 print(response.json())
-response = requests.post(BASE + "rate", {"car_id": 1, "rating": 5})
+response = requests.post(BASE + "rate", {"car_id": 7, "rating": 4.5})
 print(response.json())
 
-input()
-print('Everything that database has:')
+#input()
+print('All the unique models of the database:')
 response = requests.get(BASE + "cars/")
 print(response.json())
-print('Everything that database has:')
-response = requests.get(BASE + "cars")
+
+#input()
+print('Popularity of the cars:')
+response = requests.get(BASE + "popular/")
 print(response.json())
 
-print('Deletion of all database')
-for i in range(len(data)):
-    response = requests.delete(BASE + "cars/" + str(i))
-print(response.json())
+#print('Deletion of one row')
+#response = requests.delete(BASE + "cars/" + str(5))
+#print(response)
