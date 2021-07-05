@@ -8,7 +8,7 @@ import io
 
 
 # Download the list of Dealers
-makes_url = 'https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=csv'
+makes_url = r'https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=csv'
 makes = requests.get(makes_url).text
 makes = io.StringIO(makes)
 makes = pd.read_csv(makes, sep=",")
@@ -51,7 +51,7 @@ resource_fields_get = {
 }
 
 
-@api.resource("/cars","/cars/")
+@api.resource("/cars", "/cars/")
 class Cars(Resource):
     def post(self):
         args = car_put_args.parse_args()
@@ -81,11 +81,11 @@ class Cars(Resource):
         for i in result:
             res_list.append({'id': i[0], 'make': i[1], 'model': i[2], 'avg_rating': round(i[3], 1)})
         if not result:
-            abort(404, message=f'The database is empty')
-        return res_list, 201
+            abort(404, message='The database is empty')
+        return res_list, 200
 
 
-@api.resource("/rate","/rate/")
+@api.resource("/rate", "/rate/")
 class CarsRating(Resource):
     def post(self):
         args = car_update_args.parse_args()
@@ -125,7 +125,7 @@ class PopularCars(Resource):
             res_list.append({'id': i[0], 'make': i[1], 'model': i[2], 'rates_number': i[3]})
         if not result:
             abort(404, message=f'The database is empty')
-        return res_list, 201
+        return res_list, 200
 
 
 if __name__ == "__main__":
