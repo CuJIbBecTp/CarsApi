@@ -2,15 +2,17 @@ from flask import Flask
 import requests
 from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy.sql import func
 import pandas as pd
 import io
 
+
 # Download the list of Dealers
 makes_url = 'https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=csv'
-makes_string = requests.get(makes_url).text
-makes = io.StringIO(makes_string)
-makes_pd = pd.read_csv(makes, sep=",")
-makes = [i.lower() for i in (makes_pd.iloc[:,1]).values.tolist()]
+makes = requests.get(makes_url).text
+makes = io.StringIO(makes)
+makes = pd.read_csv(makes, sep=",")
+makes = [i.lower() for i in (makes.iloc[:,1]).values.tolist()]
 
 
 app = Flask(__name__)
@@ -26,8 +28,11 @@ class CarModel(db.Model):
     model = db.Column(db.String(100), nullable=False)
     rate = db.Column(db.Float(32), nullable=False)
 
-#db.create_all()
+    def __repr__(self):
+        return f"Car(make = {self.make}, model = {self.model}, rate = {self.rate})"
 
+
+db.create_all()
 
 car_put_args = reqparse.RequestParser()
 car_put_args.add_argument("make", type=str, help="Make of the car", required=True)
@@ -38,47 +43,50 @@ car_update_args = reqparse.RequestParser()
 car_update_args.add_argument("car_id", type=int, help="id of the car", required=True)
 car_update_args.add_argument("rating", type=float, help="Rating of the car in the range [1,5]", required=True)
 
-resource_fields = {
+resource_fields_get = {
     'id': fields.String,
     'make': fields.String,
     'model': fields.String,
-    'rate': fields.Float
+    'avg_rating': fields.Float
 }
 
 
 @api.resource("/cars","/cars/")
 class Cars(Resource):
-    @marshal_with(resource_fields)
     def post(self):
         args = car_put_args.parse_args()
         make = args['make'].lower()
         if make not in makes:
             abort(404, message="Make doesn't exist")
-        model_url = f'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/{make}?format=csv'
-        model_string = requests.get(model_url).text
-        model = io.StringIO(model_string)
-        model_pd = pd.read_csv(model, sep=",")
-        models = [i.lower() for i in (model_pd.iloc[:,3]).values.tolist()]
+        models_url = f'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/{make}?format=csv'
+        models = requests.get(models_url).text
+        models = io.StringIO(models)
+        models = pd.read_csv(models, sep=",")
+        models = [i.lower() for i in (models.iloc[:,3]).values.tolist()]
         model = args['model'].lower()
         if model not in models:
             abort(404, message="Model doesn't exist")
         car = CarModel(make=make.capitalize(), model=model.capitalize(), rate=args['rate'])
         db.session.add(car)
         db.session.commit()
-        return car, 201
+        return 201
 
-    @marshal_with(resource_fields)
+    @marshal_with(resource_fields_get)
     def get(self):
-        result = CarModel.query.all()
+        query = db.session.query(CarModel.id, CarModel.make, CarModel.model,func.avg(CarModel.rate))\
+                .group_by(CarModel.make, CarModel.model) \
+                .order_by(CarModel.id.asc())
+        result = db.session.execute(query).fetchall()
+        res_list = []
+        for i in result:
+            res_list.append({'id': i[0], 'make': i[1], 'model': i[2], 'avg_rating': round(i[3], 1)})
         if not result:
             abort(404, message=f'The database is empty')
-        print(result)
-        return result
+        return res_list, 201
 
 
 @api.resource("/rate","/rate/")
 class CarsRating(Resource):
-    @marshal_with(resource_fields)
     def post(self):
         args = car_update_args.parse_args()
         result = CarModel.query.filter_by(id=args['car_id']).first()
@@ -89,31 +97,11 @@ class CarsRating(Resource):
         else:
             abort(404, message="Value does not satisfy the range [1,5]")
         db.session.commit()
-        return result
+        return 201
 
 
 @api.resource("/cars/<int:car_id>")
-class Car(Resource):
-    @marshal_with(resource_fields)
-    def get(self, car_id):
-        result = CarModel.query.filter_by(id=car_id).first()
-        if not result:
-            abort(404, message=f'Could not find car with id={car_id}')
-        return result
-
-    @marshal_with(resource_fields)
-    def put(self, car_id):
-        args = car_put_args.parse_args()
-        result = CarModel.query.filter_by(id=car_id).first()
-        if result:
-            abort(409, message="Car id already taken...")
-
-        car = CarModel(id=car_id, make=args['make'], model=args['model'], rate=args['rate'])
-        db.session.add(car)
-        db.session.commit()
-        return car, 201
-
-    @marshal_with(resource_fields)
+class DeleteCar(Resource):
     def delete(self, car_id):
         result = CarModel.query.filter_by(id=car_id).first()
         if not result:
@@ -122,16 +110,22 @@ class Car(Resource):
         db.session.commit()
         return 204
 
-    @marshal_with(resource_fields)
-    def patch(self, car_id):
-        args = car_update_args.parse_args()
-        result = CarModel.query.filter_by(id=car_id).first()
+
+@api.resource("/popular", "/popular/")
+class PopularCars(Resource):
+    @marshal_with({'make': fields.String, 'model': fields.String, 'rates_number': fields.Integer})
+    def get(self):
+        query = db.session.query(CarModel.id, CarModel.make, CarModel.model, func.count(CarModel.rate)) \
+            .group_by(CarModel.make, CarModel.model)\
+            .order_by(func.count(CarModel.rate).desc())
+        result = db.session.execute(query).fetchall()
+        print(result)
+        res_list = []
+        for i in result:
+            res_list.append({'id': i[0], 'make': i[1], 'model': i[2], 'rates_number': i[3]})
         if not result:
-            abort(404, message="Car doesn't exist, cannot update")
-        if args['rating']:
-            result.rate = args['rating']
-        db.session.commit()
-        return result
+            abort(404, message=f'The database is empty')
+        return res_list, 201
 
 
 if __name__ == "__main__":
