@@ -1,6 +1,8 @@
 import pytest
 from app import app, db, CarModel
 
+app.config['SQLALCHEMY_DATABASE_URI'] = 'sqlite:///tests/database.db'
+
 
 @pytest.fixture(scope='module')
 def new_car():
@@ -12,7 +14,9 @@ def new_car():
 def test_client():
     # Create a test client using the Flask application
     with app.test_client() as client:
+        db.create_all()
         yield client
+        db.drop_all()
 
 
 @pytest.fixture(scope='module')
