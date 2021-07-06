@@ -5,4 +5,4 @@ ADD . /CarsApi
 WORKDIR /CarsApi
 RUN pip install -r requirements.txt
 EXPOSE 5000
-ENV FLASK_APP=app.py
+ENV FLASK_APP=wsgi.py
