@@ -121,7 +121,3 @@ class PopularCars(Resource):
         if not result:
             abort(404, message=f'The database is empty')
         return res_list, 200
-
-
-if __name__ == "__main__":
-    app.run(host='0.0.0.0', threaded=True, debug=False, port=5000)
