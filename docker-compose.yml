@@ -11,10 +11,10 @@ services:
 
     # Set some environment variables to be used in the application
     environment:
-      FLASK_APP: app.py
+      FLASK_APP: wsgi.py
 
     # The process that runs in the container.
-    command: python app.py
+    command: python wsgi.py
 
     # Make the port available on the host machine
     # so that we can navigate there with our web browser.
