@@ -3,16 +3,13 @@ import requests
 from flask_restful import Api, Resource, reqparse, abort, fields, marshal_with
 from flask_sqlalchemy import SQLAlchemy
 from sqlalchemy.sql import func
-import pandas as pd
-import io
 
 
 # Download the list of Dealers
 makes_url = r'https://vpic.nhtsa.dot.gov/api/vehicles/GetAllMakes?format=csv'
 makes = requests.get(makes_url).text
-makes = io.StringIO(makes)
-makes = pd.read_csv(makes, sep=",")
-makes = [i.lower() for i in (makes.iloc[:,1]).values.tolist()]
+makes = [i.split(',') for i in makes.split('\r')][1:-1]
+makes = ([i[1].lower() for i in makes])
 
 
 app = Flask(__name__)
@@ -60,9 +57,8 @@ class Cars(Resource):
             abort(404, message="Make doesn't exist")
         models_url = f'https://vpic.nhtsa.dot.gov/api/vehicles/GetModelsForMake/{make}?format=csv'
         models = requests.get(models_url).text
-        models = io.StringIO(models)
-        models = pd.read_csv(models, sep=",")
-        models = [i.lower() for i in (models.iloc[:,3]).values.tolist()]
+        models = [i.split(',') for i in models.split('\r')][1:-1]
+        models = ([i[3].lower() for i in models])
         model = args['model'].lower()
         if model not in models:
             abort(404, message="Model doesn't exist")
